@@ -1,2 +1,1 @@
-# flashsherlock.github.io
-website on github pages
+Website on github pages
