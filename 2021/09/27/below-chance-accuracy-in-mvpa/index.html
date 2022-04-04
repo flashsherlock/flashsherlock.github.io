@@ -3,11 +3,12 @@
 library(&quot;dplyr&quot;)
 library(&quot;e1071&quot;)
 # --------training function ---------
-f_train &lt;- function(n, nv = 2,
-                    r=F, c=n) {
+f_train &lt;- function(n, s = 1,
+                    r = F, c = n) {
   # nv: number of features
+  nv &lt;- 2
   # n: number of observations
-  set.seed(1)
+  set.seed(s)
   # generate random data
   rNum &lt;- rnorm(nv * n)
   rNum &lt;- matrix(rNum, n, nv)
@@ -38,13 +39,13 @@ p &lt;- expand.grid(iTest = 1:200,
                  n = seq(10, 210, 50))
 data_test &lt;- p %&gt;%
   group_by(iTest, n) %&gt;%
-  do(data.frame(acc = f_train(.$n)))</code></pre><p><img src=/post/2021-09-27-below-chance-accuracy-in-mvpa_files/figure-html/plot_data-1.png width=384 style=display:block;margin:auto></p><p>As the sample size increases, variability decreases, and the mean accuracy tends to be 50%. However, there is a persistent small down bias on average, which can be eliminated using sampling with replacement.</p><pre class=r><code># with replacement, leave one out
+  do(data.frame(acc = f_train(.$n,.$iTest)))</code></pre><p><img src=/post/2021-09-27-below-chance-accuracy-in-mvpa_files/figure-html/plot_data-1.png width=384 style=display:block;margin:auto></p><p>As the sample size increases, variability decreases, and the mean accuracy tends to be 50%. However, there is a persistent small down bias on average, which can be eliminated using sampling with replacement.</p><pre class=r><code># with replacement, leave one out
 data_test &lt;- p %&gt;%
   group_by(iTest, n) %&gt;%
-  do(data.frame(acc = f_train(.$n,
+  do(data.frame(acc = f_train(.$n,.$iTest,
                               r = T)))</code></pre><p><img src=/post/2021-09-27-below-chance-accuracy-in-mvpa_files/figure-html/unnamed-chunk-5-1.png width=384 style=display:block;margin:auto></p><p>In addition, change to 10-fold cross validation may also decrease the variability.</p><pre class=r><code># with replacement, 10-fold cross validation
 data_test &lt;- p %&gt;%
   group_by(iTest, n) %&gt;%
-  do(data.frame(acc = f_train(.$n,
+  do(data.frame(acc = f_train(.$n,.$iTest,
                               r = F, c=10)))</code></pre><p><img src=/post/2021-09-27-below-chance-accuracy-in-mvpa_files/figure-html/unnamed-chunk-7-1.png width=384 style=display:block;margin:auto></p><p>Some references:</p><ol style=list-style-type:decimal><li><a href=https://doi.org/10.1016/j.neuroimage.2017.12.083>The same analysis approach: Practical protection against the pitfalls of novel neuroimaging analysis methods</a></li><li><a href=https://doi.org/10.1016/j.neuroimage.2018.09.074>How to control for confounds in decoding analyses of neuroimaging data</a></li><li><a href=https://doi.org/10.1002/hbm.23140>Classification Based Hypothesis Testing in Neuroscience: Below-Chance Level Classification Rates and Overlooked Statistical Properties of Linear Parametric Classifiers</a></li><li><a href=https://doi.org/10.1371/journal.pcbi.1006486>Multivariate classification of neuroimaging data with nested subclasses: Biased accuracy and implications for hypothesis testing</a></li><li><a href=http://dx.doi.org/10.1016/j.neuroimage.2017.08.005>Deconstructing multivariate decoding for the study of brain function</a></li></ol></div></article><section id=comments><div id=disqus_thread></div><script>var disqus_config=function(){};(function(){var inIFrame=function(){var iframe=true;try{iframe=window.self!==window.top;}catch(e){}
 return iframe;};if(inIFrame())return;var d=document,s=d.createElement('script');s.src='//gufei.disqus.com/embed.js';s.async=true;s.setAttribute('data-timestamp',+new Date());(d.head||d.body).appendChild(s);})();</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript></section></main><footer class=footer><ul class=footer-links><li><a href=/index.xml type=application/rss+xml target=_blank>RSS feed</a></li><li><a href=mailto:guf@psych.ac.cn>Email: guf@psych.ac.cn</a></li><li><a href=https://gohugo.io/ class=footer-links-kudos>Made with <img src=/images/hugo-logo.png alt="Img link to Hugo website" width=22 height=22></a></li></ul></footer></div><script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js></script><script src=//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js></script><script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/r.min.js></script><script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js></script><script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/matlab.min.js></script><script>hljs.configure({languages:[]});hljs.initHighlightingOnLoad();hljs.initLineNumbersOnLoad();</script><script src=/js/math-code.js></script><script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');ga('create','UA-165298048-1','auto');ga('send','pageview');}</script></body></html>
