@@ -5,5 +5,8 @@
 \(P_m\)是第m个百分位分数 L是\(P_m\)所在组的下限 f是\(P_m\)所在组的次数 \(F_b\)是小于L的累积次数 1.1.3 百分等级分数 知道原始分数，求百分数
 \(PR=\dfrac{F_b+\frac{f(P_m-L)}{i}}{N}\times{100}\)
 PR是百分等级分数 L是某特定原始变量所在组的下限 f是某特定原始变量所在组的次数 \(F_b\)是小于L的累积次数 i是组距 1.2 离散程度 1.2.1 方差 \(S^2=\dfrac{\displaystyle \sum_{i=1}^n (X_i-\bar{X})^2}{n-1}=\dfrac{\displaystyle \sum_{i=1}^{n}X_i^2}{n-1}-\bar{X}^2\)
-1.2.2 变异系数 \(CV_\sigma=\dfrac{\sigma}{\mu}\)</description></item><item><title>iGEM website class</title><link>https://flashsherlock.github.io/2017/02/01/igem-website-class/</link><pubDate>Wed, 01 Feb 2017 00:00:00 +0000</pubDate><guid>https://flashsherlock.github.io/2017/02/01/igem-website-class/</guid><description>iGEM培训 iGEM在招募阶段组织了一系列培训，包括数学建模、网页制作等。网页制作部分布置了两项寒假作业，即分别模仿简书和532的风格写两个网页。我在寒假花了几周的时间学习了写网页，完成了这两个网页，对写网页有了一些认识（不过现在忘了很多）。下面是当时的两个网页：
+1.2.2 变异系数 \(CV_\sigma=\dfrac{\sigma}{\mu}\)
+1.3 偏态和峰度 测量有不同的方法，上课讲的是下面两个。
+1.3.1 偏态 偏度\(a_3= \dfrac{\displaystyle\sum_{i=1}^{n} (X_i-\bar{X})^3}{nS^3}\)
+1.3.2 峰度 峰度\(a_4= \dfrac{\displaystyle \sum_{i=1}^{n} (X_i-\bar{X})^4}{nS^4}\)</description></item><item><title>iGEM website class</title><link>https://flashsherlock.github.io/2017/02/01/igem-website-class/</link><pubDate>Wed, 01 Feb 2017 00:00:00 +0000</pubDate><guid>https://flashsherlock.github.io/2017/02/01/igem-website-class/</guid><description>iGEM培训 iGEM在招募阶段组织了一系列培训，包括数学建模、网页制作等。网页制作部分布置了两项寒假作业，即分别模仿简书和532的风格写两个网页。我在寒假花了几周的时间学习了写网页，完成了这两个网页，对写网页有了一些认识（不过现在忘了很多）。下面是当时的两个网页：
 简书风格 532风格 虽然后来iGEM比赛的网页是信科的几位同学来写的，但学会一些网页的基础知识和技能也还是有用的，至少后来一次课的作业也用上了(目前这个网站也会用上吧)。</description></item></channel></rss>
