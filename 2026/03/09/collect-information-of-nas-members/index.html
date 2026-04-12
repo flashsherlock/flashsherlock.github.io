@@ -1,0 +1,160 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.110.0"><title>Collect information of NAS members - Fei</title><meta property="og:title" content="Collect information of NAS members - Fei"><link href=https://flashsherlock.github.io/favicon.ico rel=icon type=image/x-icon><script async src="https://www.googletagmanager.com/gtag/js?id=G-3WJ71TQ2TX"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-3WJ71TQ2TX",{anonymize_ip:!1})}</script><link href=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/atom-one-dark-reasonable.min.css rel=stylesheet type=text/css><link rel=stylesheet href=/css/fonts.css media=all><link rel=stylesheet href=/css/main.css media=all><link rel=canonical href=https://flashsherlock.github.io/2026/03/09/collect-information-of-nas-members/></head><body><div class=wrapper><header class=header><nav class=nav><a href=/ class=nav-logo><img src=/images/logo.png width=50 height=50 alt=Logo></a><ul class=nav-links><li><a href=/>Home</a></li><li><a href=http://zhouw.psych.ac.cn/>Lab</a></li><li><a href=https://github.com/flashsherlock/rwebsite>GitHub</a></li><li><a href=/about/>About</a></li></ul></nav></header><main class=content role=main><article class=article><h1 class=article-title>Collect information of NAS members</h1><span class=article-duration>3 min read</span>
+<span class=article-date>2026-03-09</span><div class=article-content><p>When submitting to PNAS, you’re required to suggest <a href=https://nrc88.nas.edu/pnas_search/default.aspx>NAS members</a>. Since there are so many of them, manually browsing their profiles on the website is incredibly tedious. To solve this, I had AI write a Python script to collect information for members in relevant fields.The results were great—check out the code below. Beyond just writing code, AI is becoming an autonomous agent through tools like <a href=https://openclaw.ai/>OpenClaw</a>, bridging the gap between instructions and results.</p><pre class=python><code>import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+BASE = &quot;https://nrc88.nas.edu&quot;
+SEARCH_URL = &quot;https://nrc88.nas.edu/pnas_search/default.aspx&quot;
+HEADERS = {
+    &quot;User-Agent&quot;: &quot;Mozilla/5.0&quot;
+}
+
+def safe_request(url, retries=3):
+    for i in range(retries):
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=20)
+            return r
+        except Exception as e:
+            print(&quot;Retry&quot;, i + 1, url)
+            time.sleep(2)
+    return None
+
+def get_hidden_fields(soup):
+    data = {}
+    for tag in soup.select(&quot;input[type=hidden]&quot;):
+        data[tag.get(&quot;name&quot;)] = tag.get(&quot;value&quot;, &quot;&quot;)
+    return data
+
+def get_page(session, discipline_id, page_index, soup):
+    data = get_hidden_fields(soup)
+    event_target = f&quot;ucSearch$ucSearchResults$datalistPaging$ctl0{page_index}$linkButtonPage&quot;
+    data[&quot;__EVENTTARGET&quot;] = event_target
+    data[&quot;__EVENTARGUMENT&quot;] = &quot;&quot;
+
+    r = session.post(
+        SEARCH_URL + f&quot;?disciplineID={discipline_id}&quot;,
+        data=data,
+        headers=HEADERS,
+        timeout=20
+    )
+
+    return BeautifulSoup(r.text, &quot;html.parser&quot;)
+
+def collect_editor_links(discipline_id):
+    session = requests.Session()
+    r = session.get(
+        SEARCH_URL,
+        params={&quot;disciplineID&quot;: discipline_id},
+        headers=HEADERS,
+        timeout=20
+    )
+    soup = BeautifulSoup(r.text, &quot;html.parser&quot;)
+    editors = {}
+    page_links = soup.select(&quot;#ucSearch_ucSearchResults_datalistPaging a&quot;)
+    total_pages = len(page_links)
+    print(&quot;Total pages:&quot;, total_pages)
+
+    for page in range(total_pages):
+        if page &gt; 0:
+            soup = get_page(session, discipline_id, page, soup)
+            time.sleep(1)
+        for a in soup.select(&quot;a[href*=&#39;memberDetails.aspx&#39;]&quot;):
+            name = a.text.strip()
+            link = BASE + &quot;/pnas_search/&quot; + a[&quot;href&quot;]
+            editors[link] = name
+            
+    return editors
+
+def parse_editor(link):
+    try:
+        r = safe_request(link)
+        if not r:
+            return None
+        soup = BeautifulSoup(r.text, &quot;html.parser&quot;)
+        record = {
+            &quot;name&quot;: &quot;&quot;,
+            &quot;location&quot;: &quot;&quot;,
+            &quot;primary_field&quot;: &quot;&quot;,
+            &quot;secondary_field&quot;: &quot;&quot;,
+            &quot;election_citation&quot;: &quot;&quot;,
+            &quot;research_interests&quot;: &quot;&quot;,
+            &quot;profile_link&quot;: link
+        }
+        table = soup.find(&quot;table&quot;, class_=&quot;detailsTable&quot;)
+
+        if not table:
+            return record
+        rows = table.find_all(&quot;tr&quot;)
+        current_section = None
+        
+        for row in rows:
+            name_cell = row.find(&quot;td&quot;, class_=&quot;detailsName&quot;)
+            value_cell = row.find(&quot;td&quot;, class_=&quot;detailsValue&quot;)
+            
+            if name_cell and value_cell:
+
+                key = name_cell.get_text(strip=True)
+                value = value_cell.get_text(&quot; &quot;, strip=True)
+
+                if key == &quot;Name&quot;:
+                    record[&quot;name&quot;] = value
+                elif key == &quot;Location&quot;:
+                    record[&quot;location&quot;] = value
+                elif key == &quot;Primary Field&quot;:
+                    record[&quot;primary_field&quot;] = value
+                elif key == &quot;Secondary Field&quot;:
+                    record[&quot;secondary_field&quot;] = value
+                    
+            th = row.find(&quot;th&quot;)
+
+            if th:
+                title = th.get_text(strip=True)
+                if &quot;Election Citation&quot; in title:
+                    current_section = &quot;election&quot;
+                elif &quot;Research Interests&quot; in title:
+                    current_section = &quot;research&quot;
+            long_td = row.find(&quot;td&quot;, class_=&quot;detailsLongValue&quot;)
+
+            if long_td:
+                text = long_td.get_text(&quot; &quot;, strip=True)
+                if current_section == &quot;election&quot;:
+                    record[&quot;election_citation&quot;] = text
+                elif current_section == &quot;research&quot;:
+                    record[&quot;research_interests&quot;] = text
+        return record
+
+    except Exception as e:
+        print(&quot;Error:&quot;, link, e)
+        return None
+
+def main(discipline_ids):
+    all_links = {}
+    for d in discipline_ids:
+        print(&quot;Scraping discipline:&quot;, d)
+        editors = collect_editor_links(d)
+        all_links.update(editors)
+    all_links = list(set(all_links))
+    print(&quot;Total editors:&quot;, len(all_links))
+    results = []
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        records = executor.map(parse_editor, all_links)
+        for r in records:
+            if r:
+                results.append(r)
+                
+    df = pd.DataFrame(results)
+    df.to_csv(&quot;./pnas_member_editors_full.csv&quot;, index=False)
+    print(&quot;Saved:&quot;, len(df))
+    
+if __name__ == &quot;__main__&quot;:
+    discipline_ids = [24, 28, 52]
+    main(discipline_ids)</code></pre></div></article><section id=comments><div id=disqus_thread></div><script>var disqus_config=function(){};(function(){if(n=function(){var e=!0;try{e=window.self!==window.top}catch{}return e},n())return;var n,t=document,e=t.createElement("script");e.src="//gufei.disqus.com/embed.js",e.async=!0,e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)})()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript></section></main><footer class=footer><ul class=footer-links><li><a href=/index.xml type=application/rss+xml target=_blank>RSS feed</a></li><li><a href=mailto:guf@psych.ac.cn>Email: guf@psych.ac.cn</a></li><li><a href=https://gohugo.io/ class=footer-links-kudos>Made with <img src=/images/hugo-logo.png alt="Img link to Hugo website" width=22 height=22></a></li></ul></footer></div><script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js></script>
+<script src=//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js></script>
+<script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/r.min.js></script>
+<script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js></script>
+<script src=//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/matlab.min.js></script>
+<script>hljs.configure({languages:[]}),hljs.initHighlightingOnLoad(),hljs.initLineNumbersOnLoad()</script><script src=/js/math-code.js></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script></body></html>
